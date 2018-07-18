@@ -39,8 +39,7 @@ def load_vgg(sess, vgg_path):
     return graph.get_tensor_by_name(vgg_input_tensor_name), graph.get_tensor_by_name(vgg_keep_prob_tensor_name), graph.get_tensor_by_name(vgg_layer3_out_tensor_name), graph.get_tensor_by_name(vgg_layer4_out_tensor_name), graph.get_tensor_by_name(vgg_layer7_out_tensor_name)
 tests.test_load_vgg(load_vgg, tf)
 
-
-def layers(vgg_layer3_out, vgg_layer4_out, vgg_layer7_out, num_classes):
+def layers(vgg_layer3_out, vgg_layer4_out, vgg_layer7_out, num_classes, mode):
     """
     Create the layers for a fully convolutional network.  Build skip-layers using the vgg layers.
     :param vgg_layer3_out: TF Tensor for VGG Layer 3 output
@@ -54,15 +53,23 @@ def layers(vgg_layer3_out, vgg_layer4_out, vgg_layer7_out, num_classes):
     # TODO: Implement function
     fcn8 = tf.layers.conv2d(vgg_layer7_out, filters=num_classes, kernel_size=1, kernel_regularizer = tf.contrib.layers.l2_regularizer(reg_value), kernel_initializer=tf.truncated_normal_initializer(), name="fcn8")
 
+    fcn8 = tf.layers.batch_normalization(fcn8, training=mode)
+
     fcn9 = tf.layers.conv2d_transpose(fcn8, filters=vgg_layer4_out.get_shape().as_list()[-1], kernel_size=4, strides=(2, 2), padding='SAME', kernel_regularizer = tf.contrib.layers.l2_regularizer(reg_value),kernel_initializer=tf.truncated_normal_initializer(), name="fcn9")
+
+    fcn9 = tf.layers.batch_normalization(fcn9, training=mode)
 
     fcn9_skip_connected = tf.add(fcn9, vgg_layer4_out, name="fcn9_plus_vgg_layer4")
 
     fcn10 = tf.layers.conv2d_transpose(fcn9_skip_connected, filters=vgg_layer3_out.get_shape().as_list()[-1], kernel_size=4, strides=(2, 2), padding='SAME', kernel_regularizer = tf.contrib.layers.l2_regularizer(reg_value), kernel_initializer=tf.truncated_normal_initializer(), name="fcn10_conv2d")
 
+    fcn10 = tf.layers.batch_normalization(fcn10, training=mode)
+
     fcn10_skip_connected = tf.add(fcn10, vgg_layer3_out, name="fcn10_plus_vgg_layer3")
 
     fcn11 = tf.layers.conv2d_transpose(fcn10_skip_connected, filters=num_classes, kernel_size=16, strides=(8, 8), padding='SAME', kernel_regularizer = tf.contrib.layers.l2_regularizer(reg_value), kernel_initializer=tf.truncated_normal_initializer(), name="fcn11")
+
+    fcn11 = tf.layers.batch_normalization(fcn11, training=mode)
 
     return fcn11
 tests.test_layers(layers)
@@ -117,7 +124,8 @@ def train_nn(sess, epochs, batch_size, get_batches_fn, train_op, cross_entropy_l
                     input_image: image,
                     correct_label: seg,
                     keep_prob: 0.5,
-                    learning_rate: 0.0001
+                    learning_rate: 0.0001,
+                    mode=True
                 })
             total_loss += loss * batch_size
         print(total_num_images)
@@ -126,7 +134,6 @@ def train_nn(sess, epochs, batch_size, get_batches_fn, train_op, cross_entropy_l
         print("Loss = {:.3f}".format(total_loss))
 
 tests.test_train_nn(train_nn)
-
 
 def run():
     print("starting")
@@ -154,7 +161,8 @@ def run():
 
         # TODO: Build NN using load_vgg, layers, and optimize function
         input_image, keep_prob, layer3, layer4, layer7 = load_vgg(sess, vgg_path)
-        last_layer = layers(layer3, layer4, layer7, num_classes)
+        mode = tf.placeholder(tf.bool, name="mode")
+        last_layer = layers(layer3, layer4, layer7, num_classes, mode)
         
         correct_label = tf.placeholder(tf.float32, [None, None, None, num_classes])
         learning_rate = tf.placeholder(tf.float32)
@@ -166,7 +174,7 @@ def run():
         train_nn(sess, epochs, batch_size, get_batches_fn, train_op,cross_entropy_loss, input_image, correct_label, keep_prob, learning_rate)
 
         # TODO: Save inference data using helper.save_inference_samples
-        helper.save_inference_samples(runs_dir, data_dir, sess, image_shape, logits, keep_prob, input_image)
+        helper.save_inference_samples(runs_dir, data_dir, sess, image_shape, logits, keep_prob, input_image, mode)
 
         # OPTIONAL: Apply the trained model to a video
 
