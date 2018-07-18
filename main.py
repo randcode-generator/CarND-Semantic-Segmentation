@@ -37,7 +37,6 @@ def load_vgg(sess, vgg_path):
     graph = tf.get_default_graph()
 
     return graph.get_tensor_by_name(vgg_input_tensor_name), graph.get_tensor_by_name(vgg_keep_prob_tensor_name), graph.get_tensor_by_name(vgg_layer3_out_tensor_name), graph.get_tensor_by_name(vgg_layer4_out_tensor_name), graph.get_tensor_by_name(vgg_layer7_out_tensor_name)
-tests.test_load_vgg(load_vgg, tf)
 
 def layers(vgg_layer3_out, vgg_layer4_out, vgg_layer7_out, num_classes, mode):
     """
@@ -72,7 +71,6 @@ def layers(vgg_layer3_out, vgg_layer4_out, vgg_layer7_out, num_classes, mode):
     fcn11 = tf.layers.batch_normalization(fcn11, training=mode)
 
     return fcn11
-tests.test_layers(layers)
 
 
 def optimize(nn_last_layer, correct_label, learning_rate, num_classes):
@@ -92,10 +90,8 @@ def optimize(nn_last_layer, correct_label, learning_rate, num_classes):
     train_op = tf.train.AdamOptimizer(learning_rate=learning_rate).minimize(cross_entropy_loss, name="fcn_train_op")
 
     return logits, train_op, cross_entropy_loss
-tests.test_optimize(optimize)
 
-
-def train_nn(sess, epochs, batch_size, get_batches_fn, train_op, cross_entropy_loss, input_image, correct_label, keep_prob, learning_rate):
+def train_nn(sess, epochs, batch_size, get_batches_fn, train_op, cross_entropy_loss, input_image, correct_label, keep_prob, learning_rate, mode):
     """
     Train neural network and print out the loss during training.
     :param sess: TF Session
@@ -125,7 +121,7 @@ def train_nn(sess, epochs, batch_size, get_batches_fn, train_op, cross_entropy_l
                     correct_label: seg,
                     keep_prob: 0.5,
                     learning_rate: 0.0001,
-                    mode=True
+                    mode:True
                 })
             total_loss += loss * batch_size
         print(total_num_images)
@@ -133,15 +129,12 @@ def train_nn(sess, epochs, batch_size, get_batches_fn, train_op, cross_entropy_l
         print("EPOCH {}...".format(e))
         print("Loss = {:.3f}".format(total_loss))
 
-tests.test_train_nn(train_nn)
-
 def run():
     print("starting")
     num_classes = 2
     image_shape = (160, 576)
     data_dir = './data'
     runs_dir = './runs'
-    tests.test_for_kitti_dataset(data_dir)
 
     # Download pretrained vgg model
     helper.maybe_download_pretrained_vgg(data_dir)
@@ -171,7 +164,7 @@ def run():
         # TODO: Train NN using the train_nn function
         epochs = 30
         batch_size = 20
-        train_nn(sess, epochs, batch_size, get_batches_fn, train_op,cross_entropy_loss, input_image, correct_label, keep_prob, learning_rate)
+        train_nn(sess, epochs, batch_size, get_batches_fn, train_op,cross_entropy_loss, input_image, correct_label, keep_prob, learning_rate, mode)
 
         # TODO: Save inference data using helper.save_inference_samples
         helper.save_inference_samples(runs_dir, data_dir, sess, image_shape, logits, keep_prob, input_image, mode)
