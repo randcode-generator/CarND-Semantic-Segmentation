@@ -107,8 +107,7 @@ def train_nn(sess, epochs, batch_size, get_batches_fn, train_op, cross_entropy_l
     # TODO: Implement function
 
     sess.run(tf.global_variables_initializer())
-    sess.run(tf.local_variables_initializer())
-
+    
     for e in range(epochs):
         total_loss = 0.0
         total_num_images = 0
