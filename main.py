@@ -49,23 +49,23 @@ def layers(vgg_layer3_out, vgg_layer4_out, vgg_layer7_out, num_classes, mode):
     """
 
     # TODO: Implement function
-    fcn8 = tf.layers.conv2d(vgg_layer7_out, filters=num_classes, kernel_size=1, kernel_initializer=tf.truncated_normal_initializer(), name="fcn8")
+    fcn8 = tf.layers.conv2d(vgg_layer7_out, filters=num_classes, kernel_size=1, name="fcn8")
 
     fcn8 = tf.layers.batch_normalization(fcn8, training=mode)
 
-    fcn9 = tf.layers.conv2d_transpose(fcn8, filters=vgg_layer4_out.get_shape().as_list()[-1], kernel_size=4, strides=(2, 2), padding='SAME',kernel_initializer=tf.truncated_normal_initializer(), name="fcn9")
+    fcn9 = tf.layers.conv2d_transpose(fcn8, filters=vgg_layer4_out.get_shape().as_list()[-1], kernel_size=4, strides=(2, 2), padding='SAME', name="fcn9")
 
     fcn9 = tf.layers.batch_normalization(fcn9, training=mode)
 
     fcn9_skip_connected = tf.add(fcn9, vgg_layer4_out, name="fcn9_plus_vgg_layer4")
 
-    fcn10 = tf.layers.conv2d_transpose(fcn9_skip_connected, filters=vgg_layer3_out.get_shape().as_list()[-1], kernel_size=4, strides=(2, 2), padding='SAME', kernel_initializer=tf.truncated_normal_initializer(), name="fcn10_conv2d")
+    fcn10 = tf.layers.conv2d_transpose(fcn9_skip_connected, filters=vgg_layer3_out.get_shape().as_list()[-1], kernel_size=4, strides=(2, 2), padding='SAME', name="fcn10_conv2d")
 
     fcn10 = tf.layers.batch_normalization(fcn10, training=mode)
 
     fcn10_skip_connected = tf.add(fcn10, vgg_layer3_out, name="fcn10_plus_vgg_layer3")
 
-    fcn11 = tf.layers.conv2d_transpose(fcn10_skip_connected, filters=num_classes, kernel_size=16, strides=(8, 8), padding='SAME', kernel_initializer=tf.truncated_normal_initializer(), name="fcn11")
+    fcn11 = tf.layers.conv2d_transpose(fcn10_skip_connected, filters=num_classes, kernel_size=16, strides=(8, 8), padding='SAME', name="fcn11")
 
     fcn11 = tf.layers.batch_normalization(fcn11, training=mode)
 
@@ -107,7 +107,7 @@ def train_nn(sess, epochs, batch_size, get_batches_fn, train_op, cross_entropy_l
     # TODO: Implement function
 
     sess.run(tf.global_variables_initializer())
-    
+
     for e in range(epochs):
         total_loss = 0.0
         total_num_images = 0
